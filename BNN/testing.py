@@ -16,7 +16,7 @@ train_x_multi, train_y_multi = data_process(data, 3, 3, 1)
 
 model_cnn_one = BNN_onestep_cnn()
 pred_cnn_one, plus_error_cnn_one, minus_error_cnn_one, rmse_pred_cnn_one, mape_pred_cnn_one, mae_pred_cnn_one, dist_cnn_one, auc_cnn_one = 
-  prediction(model_cnn_one, 3, train_x, test_x, train_y, test_y, method = 'svi', plots = True)
+  prediction(model_cnn_one, 3, train_x_one, test_x_one, train_y_one, test_y_one, method = 'svi', plots = True)
 
 
 model_cnn_multi = BNN_multistep_cnn()
