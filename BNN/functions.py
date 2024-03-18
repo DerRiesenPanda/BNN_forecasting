@@ -374,6 +374,38 @@ def predict_mcmc(model, x_train, y_rain, x_test, num_samples = 50):
 
 
 
+def data_process(prices, m, steps, t):
+
+  """
+    Parameters:
+      prices: datalist of financial time-series
+      m: embedding dimension. How many steps should be used for prediction
+      steps: how many steps in the future
+      t: time-lag
+
+    Returns:
+      tensors of data either for training or testing
+  """
+
+  if steps == 1:
+    x, y = split_sequences(prices, m)
+  else:
+    x, y = multi_time(prices, m, steps)
+
+  x = x[::t]
+  y = y[::t]
+
+  x = torch.tensor(x.reshape(x.shape[0],x.shape[1],1)).float()
+  y = torch.tensor(y.reshape(y.shape[0],steps,1)).float()
+
+  return x, y
+
+
+
+
+
+
+
 
 
 
