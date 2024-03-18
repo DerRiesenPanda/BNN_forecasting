@@ -402,6 +402,50 @@ def data_process(prices, m, steps, t):
 
 
 
+def prediction(bnn_model, n_inputs, x_train, x_test, y_train, y_test, method = 'svi', lr = 0.01, num_epochs = 5000, plots = False):
+
+  train_data = myDataset(x_train,y_train)
+  test_data = myDataset(x_test,y_test)
+  train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=False)
+  test_loader= torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
+
+  if method == 'svi':
+    guide_model = AutoDiagonalNormal(bnn_model)
+    fit_svi(bnn_model, guide_model, train_loader, lr = lr, model_name = "model_one", num_epochs= num_epochs, plot = plots)
+    saved = torch.load("model_one.pt")
+    bnn_model.load_state_dict(saved['model'])
+    guide = saved['guide']
+    pyro.get_param_store().load("model_one_params.pt")
+
+    pred, plus_error, minus_error, covariance, real = predict(bnn_model, guide, test_loader)
+
+    if plots == True:
+      plot_results(n_inputs, torch.cat(real).numpy().squeeze().flatten(), np.concatenate(pred, axis=0).flatten(), np.vstack(plus_error).squeeze().tolist(),
+             np.vstack(minus_error).squeeze().tolist(), title = 'BNN Model (SVI)', x_train = x_train)
+
+    rmse_pred = rmse(torch.cat(real).numpy().squeeze().flatten(),np.concatenate(pred, axis =0))
+    mape_pred = mape(torch.cat(real).numpy().squeeze().flatten(),np.concatenate(pred, axis =0))
+    mae_pred = mae(torch.cat(real).numpy().squeeze().flatten(),np.concatenate(pred, axis =0))
+    dist, auc = distance(pred, torch.cat(real).numpy().squeeze().flatten(), covariance)
+
+    return pred, plus_error, minus_error, rmse_pred, mape_pred, mae_pred, dist, auc
+
+  if method == 'mcmc':
+
+    preds_mcmc, plus_error_mcmc, minus_error_mcmc, covariance_mcmc = predict_mcmc(bnn_model, x_train, y_train, x_test, num_samples= 50)
+
+    if plots == True:
+
+      plot_results(n_inputs, test_y, preds_mcmc, plus_error_mcmc, minus_error_mcmc, title = 'BNN Model (MCMC) ', x_train = x_train)
+
+    rmse_pred = rmse(y_test.flatten().numpy(),np.concatenate(preds_mcmc, axis =0))
+    mape_pred = mape(y_test.flatten().numpy(),np.concatenate(preds_mcmc, axis =0))
+    mae_pred = mae(y_test.flatten().numpy(),np.concatenate(preds_mcmc, axis =0))
+    dist, auc = distance(pred, y_test.flatten().numpy(), covariance_mcmc)
+
+    return preds_mcmc, plus_error_mcmc, minus_error, rmse_pred, mape_pred, mae_pred, dist, auc
+
+
 
 
 
